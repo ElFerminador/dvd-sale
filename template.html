@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ cfg.title_en }}</title>
+<style>
+  :root { --bg:#fff; --fg:#1d1d1f; --muted:#6e6e73; --line:#e5e5ea; --accent:#0a66c2; --row:#fafafa; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#16161a; --fg:#f2f2f4; --muted:#9a9aa3; --line:#2c2c33; --accent:#6cb0ff; --row:#1c1c21; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.5 -apple-system, system-ui, "Segoe UI", sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width:1100px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  .intro { color:var(--muted); margin:0 0 16px; max-width:70ch; }
+  .bar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:16px 0; }
+  input[type=search] { flex:1 1 220px; padding:9px 12px; font:inherit; color:inherit; background:var(--bg); border:1px solid var(--line); border-radius:8px; }
+  .seg button { font:inherit; padding:8px 12px; color:inherit; background:var(--bg); border:1px solid var(--line); cursor:pointer; }
+  .seg button:first-child { border-radius:8px 0 0 8px; } .seg button:last-child { border-radius:0 8px 8px 0; }
+  .seg button + button { border-left:0; }
+  .seg button[aria-pressed=true] { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .count { color:var(--muted); margin-left:auto; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:8px; border-bottom:2px solid var(--line); position:sticky; top:0; background:var(--bg); }
+  th button { font:inherit; text-transform:inherit; letter-spacing:inherit; color:inherit; background:none; border:0; padding:0; cursor:pointer; }
+  th button:hover { color:var(--accent); }
+  td { padding:12px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tr:nth-child(even) td { background:var(--row); }
+  td.img { width:150px; } td.img img { display:block; width:140px; height:auto; border-radius:4px; border:1px solid var(--line); cursor:zoom-in; }
+  .title { font-weight:600; } .meta { color:var(--muted); font-size:13px; }
+  td.desc { max-width:360px; font-size:14px; }
+  body[data-lang=de] .en, body[data-lang=en] .de { display:none; }
+  @media (max-width:760px) {
+    thead { display:none; } table, tbody, tr, td { display:block; width:100%; }
+    tr { display:grid; grid-template-columns:110px 110px 1fr; gap:8px; padding:12px 0; border-bottom:1px solid var(--line); }
+    td { border:0; padding:0; background:none !important; } td.img, td.img img { width:100%; }
+    td.info, td.desc, td.lang { grid-column:1 / -1; } td.desc { max-width:none; }
+  }
+  .lightbox { position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; padding:16px; z-index:9; }
+  .lightbox.open { display:flex; } .lightbox img { max-width:100%; max-height:100%; }
+</style>
+</head>
+<body data-lang="en">
+<main>
+  <h1><span class="de">{{ cfg.title_de }}</span><span class="en">{{ cfg.title_en }}</span></h1>
+  <p class="intro"><span class="de">{{ cfg.intro_de }}</span><span class="en">{{ cfg.intro_en }}</span></p>
+  <div class="bar">
+    <input type="search" id="q" placeholder="Search…" aria-label="Search">
+    <div class="seg" role="group" aria-label="Sortierung / Sort order">
+      <button data-sort="asc" aria-pressed="true">A–Z</button><button data-sort="desc" aria-pressed="false">Z–A</button>
+    </div>
+    <div class="seg" role="group" aria-label="Sprache / Language">
+      <button data-l="en" aria-pressed="true">EN</button><button data-l="de" aria-pressed="false">DE</button>
+    </div>
+    <span class="count" id="count">{{ items|length }}</span>
+  </div>
+  <table>
+    <thead><tr>
+      <th><span class="de">Vorderseite</span><span class="en">Front</span></th>
+      <th><span class="de">Rückseite</span><span class="en">Back</span></th>
+      <th><button id="sorthead" title="A–Z / Z–A"><span class="de">Titel</span><span class="en">Title</span> <span id="arrow">▲</span></button></th>
+      <th><span class="de">Beschreibung</span><span class="en">Description</span></th>
+      <th><span class="de">Sprache</span><span class="en">Language</span></th>
+    </tr></thead>
+    <tbody>
+    {% for r in items %}
+    <tr data-sort="{{ r.sort_key }}" data-s="{{ (r.title ~ ' ' ~ r.year ~ ' ' ~ r.description_en ~ ' ' ~ r.description_de ~ ' ' ~ r.barcode)|lower }}">
+      <td class="img"><img loading="lazy" src="img/{{ r.id }}-f-t.jpg" data-big="img/{{ r.id }}-f-l.jpg" alt="{{ r.title }} – front"></td>
+      <td class="img"><img loading="lazy" src="img/{{ r.id }}-b-t.jpg" data-big="img/{{ r.id }}-b-l.jpg" alt="{{ r.title }} – back"></td>
+      <td class="info"><div class="title">{{ r.title }}</div>
+        <div class="meta">{{ r.year }}{% if r.runtime_min %} · {{ r.runtime_min }} min{% endif %}</div></td>
+      <td class="desc"><div class="de">{{ r.description_de }}</div><div class="en">{{ r.description_en }}</div></td>
+      <td class="lang"><span class="de">{{ r.language_de }}</span><span class="en">{{ r.language_en }}</span>
+        {% if kind == 'dvd' and r.region %}<div class="meta">Region {{ r.region }}</div>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</main>
+<div class="lightbox" id="lb"><img alt=""></div>
+<script>
+  const tbody = document.querySelector('tbody'), rows = [...tbody.children], cnt = document.getElementById('count');
+  const q = document.getElementById('q'), arrow = document.getElementById('arrow');
+  const collator = new Intl.Collator('de', { sensitivity: 'base', numeric: true });
+  let dir = 'asc';
+
+  function sortRows(d) {
+    dir = d;
+    rows.sort((a, b) => collator.compare(a.dataset.sort, b.dataset.sort) * (d === 'asc' ? 1 : -1));
+    rows.forEach(r => tbody.appendChild(r));
+    document.querySelectorAll('.seg button[data-sort]').forEach(b => b.setAttribute('aria-pressed', b.dataset.sort === d));
+    arrow.textContent = d === 'asc' ? '▲' : '▼';
+  }
+  function filterRows() {
+    const t = q.value.toLowerCase().trim(); let n = 0;
+    rows.forEach(r => { const hit = !t || r.dataset.s.includes(t); r.style.display = hit ? '' : 'none'; n += hit; });
+    cnt.textContent = n;
+  }
+  function setLang(l) {
+    document.body.dataset.lang = l; document.documentElement.lang = l;
+    q.placeholder = l === 'de' ? 'Suchen…' : 'Search…';
+    document.querySelectorAll('.seg button[data-l]').forEach(b => b.setAttribute('aria-pressed', b.dataset.l === l));
+  }
+
+  q.addEventListener('input', filterRows);
+  document.querySelectorAll('.seg button[data-sort]').forEach(b => b.addEventListener('click', () => sortRows(b.dataset.sort)));
+  document.getElementById('sorthead').addEventListener('click', () => sortRows(dir === 'asc' ? 'desc' : 'asc'));
+  document.querySelectorAll('.seg button[data-l]').forEach(b => b.addEventListener('click', () => setLang(b.dataset.l)));
+
+  const lb = document.getElementById('lb');
+  tbody.addEventListener('click', e => {
+    if (e.target.dataset.big) { lb.firstElementChild.src = e.target.dataset.big; lb.classList.add('open'); }
+  });
+  lb.addEventListener('click', () => lb.classList.remove('open'));
+  addEventListener('keydown', e => e.key === 'Escape' && lb.classList.remove('open'));
+  sortRows('asc');
+  setLang('en');
+</script>
+</body>
+</html>

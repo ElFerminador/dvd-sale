@@ -1,0 +1,11 @@
+{
+  "kind": "dvd",
+  "title_de": "DVD-Sammlung zu verkaufen",
+  "title_en": "DVD collection for sale",
+  "intro_de": "Alle DVDs in gutem, gespieltem Zustand. Die meisten sind englischsprachig, Region 1 (NTSC) – ein Region-free-Player oder Computerlaufwerk ist nötig.",
+  "intro_en": "All DVDs in good, used condition. Most are English-language, Region 1 (NTSC) – a region-free player or computer drive is required.",
+  "default_language": "en",
+  "default_region": "1",
+  "photos_dir": "photos",
+  "output_dir": "docs"
+}

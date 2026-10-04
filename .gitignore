@@ -1,0 +1,6 @@
+.venv/
+.env
+.cache.json
+photos/
+__pycache__/
+.DS_Store

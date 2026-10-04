@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DVD collection for sale</title>
+<style>
+  :root { --bg:#fff; --fg:#1d1d1f; --muted:#6e6e73; --line:#e5e5ea; --accent:#0a66c2; --row:#fafafa; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#16161a; --fg:#f2f2f4; --muted:#9a9aa3; --line:#2c2c33; --accent:#6cb0ff; --row:#1c1c21; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.5 -apple-system, system-ui, "Segoe UI", sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width:1100px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  .intro { color:var(--muted); margin:0 0 16px; max-width:70ch; }
+  .bar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:16px 0; }
+  input[type=search] { flex:1 1 220px; padding:9px 12px; font:inherit; color:inherit; background:var(--bg); border:1px solid var(--line); border-radius:8px; }
+  .seg button { font:inherit; padding:8px 12px; color:inherit; background:var(--bg); border:1px solid var(--line); cursor:pointer; }
+  .seg button:first-child { border-radius:8px 0 0 8px; } .seg button:last-child { border-radius:0 8px 8px 0; }
+  .seg button + button { border-left:0; }
+  .seg button[aria-pressed=true] { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .count { color:var(--muted); margin-left:auto; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:8px; border-bottom:2px solid var(--line); position:sticky; top:0; background:var(--bg); }
+  th button { font:inherit; text-transform:inherit; letter-spacing:inherit; color:inherit; background:none; border:0; padding:0; cursor:pointer; }
+  th button:hover { color:var(--accent); }
+  td { padding:12px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  tr:nth-child(even) td { background:var(--row); }
+  td.img { width:150px; } td.img img { display:block; width:140px; height:auto; border-radius:4px; border:1px solid var(--line); cursor:zoom-in; }
+  .title { font-weight:600; } .meta { color:var(--muted); font-size:13px; }
+  td.desc { max-width:360px; font-size:14px; }
+  body[data-lang=de] .en, body[data-lang=en] .de { display:none; }
+  @media (max-width:760px) {
+    thead { display:none; } table, tbody, tr, td { display:block; width:100%; }
+    tr { display:grid; grid-template-columns:110px 110px 1fr; gap:8px; padding:12px 0; border-bottom:1px solid var(--line); }
+    td { border:0; padding:0; background:none !important; } td.img, td.img img { width:100%; }
+    td.info, td.desc, td.lang { grid-column:1 / -1; } td.desc { max-width:none; }
+  }
+  .lightbox { position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; padding:16px; z-index:9; }
+  .lightbox.open { display:flex; } .lightbox img { max-width:100%; max-height:100%; }
+</style>
+</head>
+<body data-lang="en">
+<main>
+  <h1><span class="de">DVD-Sammlung zu verkaufen</span><span class="en">DVD collection for sale</span></h1>
+  <p class="intro"><span class="de">Alle DVDs in gutem, gespieltem Zustand. Die meisten sind englischsprachig, Region 1 (NTSC) – ein Region-free-Player oder Computerlaufwerk ist nötig.</span><span class="en">All DVDs in good, used condition. Most are English-language, Region 1 (NTSC) – a region-free player or computer drive is required.</span></p>
+  <div class="bar">
+    <input type="search" id="q" placeholder="Search…" aria-label="Search">
+    <div class="seg" role="group" aria-label="Sortierung / Sort order">
+      <button data-sort="asc" aria-pressed="true">A–Z</button><button data-sort="desc" aria-pressed="false">Z–A</button>
+    </div>
+    <div class="seg" role="group" aria-label="Sprache / Language">
+      <button data-l="en" aria-pressed="true">EN</button><button data-l="de" aria-pressed="false">DE</button>
+    </div>
+    <span class="count" id="count">4</span>
+  </div>
+  <table>
+    <thead><tr>
+      <th><span class="de">Vorderseite</span><span class="en">Front</span></th>
+      <th><span class="de">Rückseite</span><span class="en">Back</span></th>
+      <th><button id="sorthead" title="A–Z / Z–A"><span class="de">Titel</span><span class="en">Title</span> <span id="arrow">▲</span></button></th>
+      <th><span class="de">Beschreibung</span><span class="en">Description</span></th>
+      <th><span class="de">Sprache</span><span class="en">Language</span></th>
+    </tr></thead>
+    <tbody>
+    
+    <tr data-sort="Boys and Girls" data-s="boys and girls 2000 ryan and jennifer are opposites who definitely do not attract. at least that&#39;s what they always believed. when they met as twelve-year-olds, they disliked one another. when they met again as teenagers, they loathed each other. but when they meet in college, the uptight ryan and the free-spirited jennifer find that their differences bind them together and a rare friendship develops. obwohl sie sich von anfang an nicht besonders grün sind, kreuzen sich die wege von jennifer und ryan in regelmäßigen abständen, bis sie schließlich im selben college landen. ryan ist noch immer ein schüchterner brillentyp, jennifer hingegen zur strahlenden schönheit erblüht. unterschiedlicher könnten die beiden wirklich nicht sein und dennoch plagt sie immer wieder das gleiche problem: liebeskummer. also trösten sie einander, besprechen ihre probleme und werden allmählich zu unzertrennlichen freunden - bis ihre hormone ins spiel kommen. 717951010599">
+      <td class="img"><img loading="lazy" src="img/001-f-t.jpg" data-big="img/001-f-l.jpg" alt="Boys and Girls – front"></td>
+      <td class="img"><img loading="lazy" src="img/001-b-t.jpg" data-big="img/001-b-l.jpg" alt="Boys and Girls – back"></td>
+      <td class="info"><div class="title">Boys and Girls</div>
+        <div class="meta">2000 · 94 min</div></td>
+      <td class="desc"><div class="de">Obwohl sie sich von Anfang an nicht besonders grün sind, kreuzen sich die Wege von Jennifer und Ryan in regelmäßigen Abständen, bis sie schließlich im selben College landen. Ryan ist noch immer ein schüchterner Brillentyp, Jennifer hingegen zur strahlenden Schönheit erblüht. Unterschiedlicher könnten die beiden wirklich nicht sein und dennoch plagt sie immer wieder das gleiche Problem: Liebeskummer. Also trösten sie einander, besprechen ihre Probleme und werden allmählich zu unzertrennlichen Freunden - bis ihre Hormone ins Spiel kommen.</div><div class="en">Ryan and Jennifer are opposites who definitely do not attract. At least that&#39;s what they always believed. When they met as twelve-year-olds, they disliked one another. When they met again as teenagers, they loathed each other. But when they meet in college, the uptight Ryan and the free-spirited Jennifer find that their differences bind them together and a rare friendship develops.</div></td>
+      <td class="lang"><span class="de">Englisch</span><span class="en">English</span>
+        <div class="meta">Region 1</div></td>
+    </tr>
+    
+    <tr data-sort="Broken Arrow" data-s="broken arrow 1996 when rogue stealth-fighter pilot vic deakins deliberately drops off the radar while on maneuvers, the air force ends up with two stolen nuclear warheads -- and deakins&#39;s co-pilot, riley hale, is the military&#39;s only hope for getting them back. traversing the deserted canyons of utah, hale teams with park ranger terry carmichael to put deakins back in his box. vic deakins und riley halemachen mit einem b-3-stealth-bomber, der zwei atombomben an bord hat, einen übungsflug. doch deakins spielt mit falschen karten. er bringt die waffen in seine gewalt und erpresst die regierung mit der drohung, millionen menschenleben mittels eines nuklearen supergaus zu vernichten. aus den freunden sind feinde geworden. zu wasser, zu lande, in der luft, in flugzeugen und auf einer dahinrasenden eisenbahn kommt es zu einem gnadenlosen gefecht... 086162104206">
+      <td class="img"><img loading="lazy" src="img/002-f-t.jpg" data-big="img/002-f-l.jpg" alt="Broken Arrow – front"></td>
+      <td class="img"><img loading="lazy" src="img/002-b-t.jpg" data-big="img/002-b-l.jpg" alt="Broken Arrow – back"></td>
+      <td class="info"><div class="title">Broken Arrow</div>
+        <div class="meta">1996 · 108 min</div></td>
+      <td class="desc"><div class="de">Vic Deakins und Riley Halemachen mit einem B-3-Stealth-Bomber, der zwei Atombomben an Bord hat, einen Übungsflug. Doch Deakins spielt mit falschen Karten. Er bringt die Waffen in seine Gewalt und erpresst die Regierung mit der Drohung, Millionen Menschenleben mittels eines nuklearen Supergaus zu vernichten. Aus den Freunden sind Feinde geworden. Zu Wasser, zu Lande, in der Luft, in Flugzeugen und auf einer dahinrasenden Eisenbahn kommt es zu einem gnadenlosen Gefecht...</div><div class="en">When rogue stealth-fighter pilot Vic Deakins deliberately drops off the radar while on maneuvers, the Air Force ends up with two stolen nuclear warheads -- and Deakins&#39;s co-pilot, Riley Hale, is the military&#39;s only hope for getting them back. Traversing the deserted canyons of Utah, Hale teams with park ranger Terry Carmichael to put Deakins back in his box.</div></td>
+      <td class="lang"><span class="de">Englisch</span><span class="en">English</span>
+        <div class="meta">Region 1</div></td>
+    </tr>
+    
+    <tr data-sort="Spider-Man 2" data-s="spider-man 2 2004 peter parker is going through a major identity crisis. burned out from being spider-man, he decides to shelve his superhero alter ego, which leaves the city suffering in the wake of carnage left by the evil doc ock. in the meantime, parker still can&#39;t act on his feelings for mary jane watson, a girl he&#39;s loved since childhood. a certain anger begins to brew in his best friend harry osborn as well... zwei jahre sind inzwischen vergangen, als peter parker von einer genmutierten spinne gebissen wurde und sein leben sich radikal verändert hat. bei der verbrechensbekämpferei lässt er sein college-studium schleifen und verspätet sich permanent bei seinen beiden jobs. zu allem überfluss muss peter mit ansehen, wie mary jane im gegensatz zu ihm ihr leben meistert. nun allerdings streckt ein neuer bösewicht namens dr. octavius seine metallischen tentakel nach der zivilisation aus. mit ihm ist nicht zu spaßen.. 043396056077">
+      <td class="img"><img loading="lazy" src="img/003-f-t.jpg" data-big="img/003-f-l.jpg" alt="Spider-Man 2 – front"></td>
+      <td class="img"><img loading="lazy" src="img/003-b-t.jpg" data-big="img/003-b-l.jpg" alt="Spider-Man 2 – back"></td>
+      <td class="info"><div class="title">Spider-Man 2</div>
+        <div class="meta">2004 · 127 min</div></td>
+      <td class="desc"><div class="de">Zwei Jahre sind inzwischen vergangen, als Peter Parker von einer genmutierten Spinne gebissen wurde und sein Leben sich radikal verändert hat. Bei der Verbrechensbekämpferei lässt er sein College-Studium schleifen und verspätet sich permanent bei seinen beiden Jobs. Zu allem Überfluss muss Peter mit ansehen, wie Mary Jane im Gegensatz zu ihm ihr Leben meistert. Nun allerdings streckt ein neuer Bösewicht namens Dr. Octavius seine metallischen Tentakel nach der Zivilisation aus. Mit ihm ist nicht zu spaßen..</div><div class="en">Peter Parker is going through a major identity crisis. Burned out from being Spider-Man, he decides to shelve his superhero alter ego, which leaves the city suffering in the wake of carnage left by the evil Doc Ock. In the meantime, Parker still can&#39;t act on his feelings for Mary Jane Watson, a girl he&#39;s loved since childhood. A certain anger begins to brew in his best friend Harry Osborn as well...</div></td>
+      <td class="lang"><span class="de">Englisch</span><span class="en">English</span>
+        <div class="meta">Region 1</div></td>
+    </tr>
+    
+    <tr data-sort="Star Wars: Episode III - Revenge of the Sith" data-s="star wars: episode iii - revenge of the sith 2005 when the sinister sith unveil a thousand-year-old plot to rule the galaxy, the republic crumbles and from its ashes rises the evil galactic empire. jedi hero anakin skywalker must choose a side. nach drei jahren nähern sich die klonkriege endlich dem ende. um die separatisten endgültig zu besiegen, soll obi-wan kenobi ihren anführer general grevious und count dooku ihrer gerechten strafe zuführen. zur beunruhigung der schwangeren padme nutzt daheim der endgültig vom bösen korrumpierte kanzler palpatine die gelegenheit, um den jungen anakin skywalker mit versprechungen von unbegrenzter macht auf die dunkle seite zu ziehen. ratlos und hin- und hergerissen wem er dienen soll, erliegt er geblendet von deren machtverheißungen, den versuchungen der dunklen seite, schwört dem bösen darth sidious die treue und nimmt die identität von darth vader an. die sith-lords beginnen zusammen einen rachefeldzug, der in der ermordung der jedi seinen anfang nimmt... 024543212768">
+      <td class="img"><img loading="lazy" src="img/004-f-t.jpg" data-big="img/004-f-l.jpg" alt="Star Wars: Episode III - Revenge of the Sith – front"></td>
+      <td class="img"><img loading="lazy" src="img/004-b-t.jpg" data-big="img/004-b-l.jpg" alt="Star Wars: Episode III - Revenge of the Sith – back"></td>
+      <td class="info"><div class="title">Star Wars: Episode III - Revenge of the Sith</div>
+        <div class="meta">2005 · 140 min</div></td>
+      <td class="desc"><div class="de">Nach drei Jahren nähern sich die Klonkriege endlich dem Ende. Um die Separatisten endgültig zu besiegen, soll Obi-Wan Kenobi ihren Anführer General Grevious und Count Dooku ihrer gerechten Strafe zuführen. Zur Beunruhigung der schwangeren Padme nutzt daheim der endgültig vom Bösen korrumpierte Kanzler Palpatine die Gelegenheit, um den jungen Anakin Skywalker mit Versprechungen von unbegrenzter Macht auf die dunkle Seite zu ziehen. Ratlos und hin- und hergerissen wem er dienen soll, erliegt er geblendet von deren Machtverheißungen, den Versuchungen der dunklen Seite, schwört dem bösen Darth Sidious die Treue und nimmt die Identität von Darth Vader an. Die Sith-Lords beginnen zusammen einen Rachefeldzug, der in der Ermordung der Jedi seinen Anfang nimmt...</div><div class="en">When the sinister Sith unveil a thousand-year-old plot to rule the galaxy, the Republic crumbles and from its ashes rises the evil Galactic Empire. Jedi hero Anakin Skywalker must choose a side.</div></td>
+      <td class="lang"><span class="de">Englisch</span><span class="en">English</span>
+        <div class="meta">Region 1</div></td>
+    </tr>
+    
+    </tbody>
+  </table>
+</main>
+<div class="lightbox" id="lb"><img alt=""></div>
+<script>
+  const tbody = document.querySelector('tbody'), rows = [...tbody.children], cnt = document.getElementById('count');
+  const q = document.getElementById('q'), arrow = document.getElementById('arrow');
+  const collator = new Intl.Collator('de', { sensitivity: 'base', numeric: true });
+  let dir = 'asc';
+
+  function sortRows(d) {
+    dir = d;
+    rows.sort((a, b) => collator.compare(a.dataset.sort, b.dataset.sort) * (d === 'asc' ? 1 : -1));
+    rows.forEach(r => tbody.appendChild(r));
+    document.querySelectorAll('.seg button[data-sort]').forEach(b => b.setAttribute('aria-pressed', b.dataset.sort === d));
+    arrow.textContent = d === 'asc' ? '▲' : '▼';
+  }
+  function filterRows() {
+    const t = q.value.toLowerCase().trim(); let n = 0;
+    rows.forEach(r => { const hit = !t || r.dataset.s.includes(t); r.style.display = hit ? '' : 'none'; n += hit; });
+    cnt.textContent = n;
+  }
+  function setLang(l) {
+    document.body.dataset.lang = l; document.documentElement.lang = l;
+    q.placeholder = l === 'de' ? 'Suchen…' : 'Search…';
+    document.querySelectorAll('.seg button[data-l]').forEach(b => b.setAttribute('aria-pressed', b.dataset.l === l));
+  }
+
+  q.addEventListener('input', filterRows);
+  document.querySelectorAll('.seg button[data-sort]').forEach(b => b.addEventListener('click', () => sortRows(b.dataset.sort)));
+  document.getElementById('sorthead').addEventListener('click', () => sortRows(dir === 'asc' ? 'desc' : 'asc'));
+  document.querySelectorAll('.seg button[data-l]').forEach(b => b.addEventListener('click', () => setLang(b.dataset.l)));
+
+  const lb = document.getElementById('lb');
+  tbody.addEventListener('click', e => {
+    if (e.target.dataset.big) { lb.firstElementChild.src = e.target.dataset.big; lb.classList.add('open'); }
+  });
+  lb.addEventListener('click', () => lb.classList.remove('open'));
+  addEventListener('keydown', e => e.key === 'Escape' && lb.classList.remove('open'));
+  sortRows('asc');
+  setLang('en');
+</script>
+</body>
+</html>
