@@ -3,17 +3,20 @@
 Fotos (Vorder-/Rückseite) → `items.csv` mit Metadaten → statische Verkaufsseite (GitHub Pages).
 
 ## Einrichten (einmal)
-    python3 -m venv .venv && .venv/bin/pip install opencv-python-headless pillow pillow-heif requests python-dotenv anthropic jinja2
-    cp .env.example .env     # TMDB_API_KEY eintragen (themoviedb.org → Einstellungen → API → "API Key")
+    cp .env.example .env     # TMDB_API_KEY (themoviedb.org → Einstellungen → API → "API Key") und optional ANTHROPIC_API_KEY eintragen
+    ./run.sh                 # legt beim ersten Mal die Python-Umgebung an
 
 ## Ablauf
-1. Fotos in `photos/` legen. Pro Titel zwei Fotos: erst Vorderseite, dann Rückseite (Barcode sichtbar). Sortierung nach Aufnahmezeit.
-2. `.venv/bin/python sale.py scan` – liest Barcodes, holt Daten (UPCitemdb → TMDB; bei CDs MusicBrainz), schreibt `items.csv`.
-   Zeilen mit Eintrag in Spalte `check` prüfen/korrigieren (in Numbers/Excel öffnen, als UTF-8 CSV speichern).
-   Bestehende Zeilen werden nicht überschrieben (`--redo 012 013` für einzelne, `--force` für alles).
-3. `.venv/bin/python sale.py site` – erzeugt `docs/` (Seite, Bilder, `liste.txt` für das Inserat).
-4. `git add docs items.csv && git commit && git push` – GitHub Pages: Settings → Pages → Branch `main`, Ordner `/docs`.
+1. Neue Fotos in `photos/` legen: pro Titel zuerst die Vorderseite, dann die Rückseite (nach Dateiname sortiert).
+2. `./run.sh --no-upc` (schnell, liest die Titel von den Rückseiten; ohne `--no-upc` wird zuerst die Barcode-Datenbank befragt).
+   - Fotos werden fortlaufend nummeriert und umbenannt (`001front.jpg`, `001back.jpg`); die alten Namen stehen in `renamed.log`.
+   - Fehlt eine Seite, entsteht der Eintrag trotzdem, mit Bemerkung "Rückseite/Vorderseite fehlt". Nachliefern: Datei als `028back.jpg` ablegen.
+   - Danach `items.csv` prüfen (Spalte `check`), von Hand korrigieren und `./run.sh` erneut starten.
+3. Die Seite entsteht in `docs/` (Grossansichten 1800 px, Vorschau 480 px), dazu `liste.txt` (Text für Inserate).
+4. Veröffentlichen: `git add -A && git commit -m "Update" && git push` (GitHub Pages: Branch `main`, Ordner `/docs`).
 
-UPCitemdb (gratis) erlaubt ca. 100 Abfragen/Tag; bei Limit bricht `scan` ab, einfach am nächsten Tag erneut starten (Ergebnisse sind gecacht).
-Optional: `ANTHROPIC_API_KEY` in `.env` → Fallback, der die Rückseite per Vision liest, wenn Barcode/Datenbank nichts liefert.
-CD-Variante: Ordner kopieren, in `config.json` `"kind": "cd"` setzen.
+## Weiteres
+- `sale.py describe` schreibt Beschreibungen für Titel ohne Daten; `sale.py regions` übernimmt Region/Sprache aus den gespeicherten Bildanalysen; `site` ergänzt fehlende Genres und übersetzt leere Bemerkungs-Spalten.
+- Spalten `remarks_de`/`remarks_en`: eine ausfüllen, die andere wird automatisch übersetzt. `sort_title` überschreibt die Sortierung eines Titels.
+- Duplikate: `duplicates.txt` und gelbe Markierung auf der Seite.
+- CD-Variante: Ordner kopieren, in `config.json` `"kind": "cd"` setzen.

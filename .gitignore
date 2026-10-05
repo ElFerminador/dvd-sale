@@ -4,3 +4,6 @@
 photos/
 __pycache__/
 .DS_Store
+duplicates.txt
+renamed.log
+ricardo/

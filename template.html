@@ -5,19 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ cfg.title_en }}</title>
 <style>
-  :root { --bg:#fff; --fg:#1d1d1f; --muted:#6e6e73; --line:#e5e5ea; --accent:#0a66c2; --row:#fafafa; }
-  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#16161a; --fg:#f2f2f4; --muted:#9a9aa3; --line:#2c2c33; --accent:#6cb0ff; --row:#1c1c21; } }
+  :root { --bg:#fff; --fg:#1d1d1f; --muted:#6e6e73; --line:#e5e5ea; --accent:#0a66c2; --row:#fafafa; --warn-bg:#fff1c2; --warn-fg:#7a5200; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#16161a; --fg:#f2f2f4; --muted:#9a9aa3; --line:#2c2c33; --accent:#6cb0ff; --row:#1c1c21; --warn-bg:#4a3a10; --warn-fg:#ffd77a; } }
   * { box-sizing: border-box; }
   body { margin:0; font:15px/1.5 -apple-system, system-ui, "Segoe UI", sans-serif; background:var(--bg); color:var(--fg); }
-  main { max-width:1100px; margin:0 auto; padding:24px 16px 64px; }
+  main { max-width:1180px; margin:0 auto; padding:24px 16px 64px; }
   h1 { font-size:26px; margin:0 0 4px; }
   .intro { color:var(--muted); margin:0 0 16px; max-width:70ch; }
   .bar { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin:16px 0; }
-  input[type=search] { flex:1 1 220px; padding:9px 12px; font:inherit; color:inherit; background:var(--bg); border:1px solid var(--line); border-radius:8px; }
+  input[type=search], select { padding:9px 12px; font:inherit; color:inherit; background:var(--bg); border:1px solid var(--line); border-radius:8px; }
+  input[type=search] { flex:1 1 200px; }
   .seg button { font:inherit; padding:8px 12px; color:inherit; background:var(--bg); border:1px solid var(--line); cursor:pointer; }
   .seg button:first-child { border-radius:8px 0 0 8px; } .seg button:last-child { border-radius:0 8px 8px 0; }
   .seg button + button { border-left:0; }
   .seg button[aria-pressed=true] { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .chip { font:inherit; padding:8px 12px; color:inherit; background:var(--bg); border:1px solid var(--line); border-radius:8px; cursor:pointer; }
+  .chip[aria-pressed=true] { background:var(--warn-bg); color:var(--warn-fg); border-color:var(--warn-fg); }
   .count { color:var(--muted); margin-left:auto; }
   table { width:100%; border-collapse:collapse; }
   th { text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); padding:8px; border-bottom:2px solid var(--line); position:sticky; top:0; background:var(--bg); }
@@ -25,15 +28,22 @@
   th button:hover { color:var(--accent); }
   td { padding:12px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
   tr:nth-child(even) td { background:var(--row); }
+  td.nr { width:56px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--muted); }
   td.img { width:150px; } td.img img { display:block; width:140px; height:auto; border-radius:4px; border:1px solid var(--line); cursor:zoom-in; }
-  .title { font-weight:600; } .meta { color:var(--muted); font-size:13px; }
-  td.desc { max-width:360px; font-size:14px; }
+  .noimg { width:140px; aspect-ratio:3/4; display:flex; align-items:center; justify-content:center; text-align:center; font-size:13px; color:var(--muted); border:1px dashed var(--line); border-radius:4px; }
+  td.info { width:200px; } .title { font-weight:600; } .meta { color:var(--muted); font-size:13px; }
+  td.genre { font-size:13px; width:110px; }
+  .dup { display:inline-block; margin-left:6px; padding:0 7px; font-size:12px; font-weight:600; border-radius:10px; background:var(--warn-bg); color:var(--warn-fg); }
+  tr[data-dup] td:first-child { box-shadow:inset 3px 0 0 var(--warn-fg); }
+  td.desc { max-width:340px; font-size:14px; } td.rem { font-size:14px; max-width:180px; }
   body[data-lang=de] .en, body[data-lang=en] .de { display:none; }
   @media (max-width:760px) {
     thead { display:none; } table, tbody, tr, td { display:block; width:100%; }
     tr { display:grid; grid-template-columns:110px 110px 1fr; gap:8px; padding:12px 0; border-bottom:1px solid var(--line); }
-    td { border:0; padding:0; background:none !important; } td.img, td.img img { width:100%; }
-    td.info, td.desc, td.lang { grid-column:1 / -1; } td.desc { max-width:none; }
+    td { border:0; padding:0; background:none !important; width:auto; max-width:none !important; }
+    td.nr, td.info, td.genre, td.desc, td.lang, td.rem { grid-column:1 / -1; }
+    td.img, td.img img, .noimg { width:100%; }
+    td.rem:empty, td.genre:empty { display:none; }
   }
   .lightbox { position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; padding:16px; z-index:9; }
   .lightbox.open { display:flex; } .lightbox img { max-width:100%; max-height:100%; }
@@ -45,32 +55,43 @@
   <p class="intro"><span class="de">{{ cfg.intro_de }}</span><span class="en">{{ cfg.intro_en }}</span></p>
   <div class="bar">
     <input type="search" id="q" placeholder="Search…" aria-label="Search">
+    {% if genre_opts %}<select id="genre" aria-label="Genre">
+      <option value="" data-de="Alle Genres" data-en="All genres">All genres</option>
+      {% for g in genre_opts %}<option value="{{ g.en }}" data-de="{{ g.de }} ({{ g.n }})" data-en="{{ g.en }} ({{ g.n }})">{{ g.en }} ({{ g.n }})</option>{% endfor %}
+    </select>{% endif %}
     <div class="seg" role="group" aria-label="Sortierung / Sort order">
       <button data-sort="asc" aria-pressed="true">A–Z</button><button data-sort="desc" aria-pressed="false">Z–A</button>
     </div>
     <div class="seg" role="group" aria-label="Sprache / Language">
       <button data-l="en" aria-pressed="true">EN</button><button data-l="de" aria-pressed="false">DE</button>
     </div>
+    {% if dup_total %}<button class="chip" id="dupbtn" aria-pressed="false"><span class="de">Nur Mehrfache ({{ dup_total }})</span><span class="en">Duplicates only ({{ dup_total }})</span></button>{% endif %}
     <span class="count" id="count">{{ items|length }}</span>
   </div>
   <table>
     <thead><tr>
+      <th><button id="nrhead" title="Nr."><span class="de">Nr.</span><span class="en">No.</span> <span id="nrarrow"></span></button></th>
+      <th><button id="sorthead" title="A–Z / Z–A"><span class="de">Titel</span><span class="en">Title</span> <span id="arrow">▲</span></button></th>
       <th><span class="de">Vorderseite</span><span class="en">Front</span></th>
       <th><span class="de">Rückseite</span><span class="en">Back</span></th>
-      <th><button id="sorthead" title="A–Z / Z–A"><span class="de">Titel</span><span class="en">Title</span> <span id="arrow">▲</span></button></th>
+      <th><span class="de">Genre</span><span class="en">Genre</span></th>
       <th><span class="de">Beschreibung</span><span class="en">Description</span></th>
       <th><span class="de">Sprache</span><span class="en">Language</span></th>
+      <th><span class="de">Bemerkungen</span><span class="en">Remarks</span></th>
     </tr></thead>
     <tbody>
     {% for r in items %}
-    <tr data-sort="{{ r.sort_key }}" data-s="{{ (r.title ~ ' ' ~ r.year ~ ' ' ~ r.description_en ~ ' ' ~ r.description_de ~ ' ' ~ r.barcode)|lower }}">
-      <td class="img"><img loading="lazy" src="img/{{ r.id }}-f-t.jpg" data-big="img/{{ r.id }}-f-l.jpg" alt="{{ r.title }} – front"></td>
-      <td class="img"><img loading="lazy" src="img/{{ r.id }}-b-t.jpg" data-big="img/{{ r.id }}-b-l.jpg" alt="{{ r.title }} – back"></td>
-      <td class="info"><div class="title">{{ r.title }}</div>
+    <tr{% if r.dup_count > 1 %} data-dup="1"{% endif %} data-nr="{{ r.id }}" data-sort="{{ r.sort_key }}" data-genres="|{{ r.genres|join('|') }}|" data-s="{{ (r.id ~ ' ' ~ r.title ~ ' ' ~ r.year ~ ' ' ~ r.description_en ~ ' ' ~ r.description_de ~ ' ' ~ r.remarks_de ~ ' ' ~ r.remarks_en ~ ' ' ~ r.genre_de ~ ' ' ~ r.genre_en ~ ' ' ~ r.barcode)|lower }}">
+      <td class="nr">{{ r.id }}</td>
+      <td class="info"><div class="title">{{ r.title }}{% if r.dup_count > 1 %}<span class="dup"><span class="de">{{ r.dup_count }}× vorhanden</span><span class="en">{{ r.dup_count }}× in collection</span></span>{% endif %}</div>
         <div class="meta">{{ r.year }}{% if r.runtime_min %} · {{ r.runtime_min }} min{% endif %}</div></td>
+      <td class="img">{% if r.front %}<img loading="lazy" src="img/{{ r.id }}-f-t.jpg" data-big="img/{{ r.id }}-f-l.jpg" alt="{{ r.id }} {{ r.title }} – front">{% else %}<div class="noimg"><span class="de">Foto fehlt</span><span class="en">Photo missing</span></div>{% endif %}</td>
+      <td class="img">{% if r.back %}<img loading="lazy" src="img/{{ r.id }}-b-t.jpg" data-big="img/{{ r.id }}-b-l.jpg" alt="{{ r.id }} {{ r.title }} – back">{% else %}<div class="noimg"><span class="de">Foto fehlt</span><span class="en">Photo missing</span></div>{% endif %}</td>
+      <td class="genre">{%- if r.genres -%}<span class="de">{{ r.genre_de }}</span><span class="en">{{ r.genre_en }}</span>{%- endif -%}</td>
       <td class="desc"><div class="de">{{ r.description_de }}</div><div class="en">{{ r.description_en }}</div></td>
       <td class="lang"><span class="de">{{ r.language_de }}</span><span class="en">{{ r.language_en }}</span>
-        {% if kind == 'dvd' and r.region %}<div class="meta">Region {{ r.region }}</div>{% endif %}</td>
+        {% if kind == 'dvd' and r.region %}<div class="meta">{% if r.region == '0' %}<span class="de">Regionfrei</span><span class="en">Region free</span>{% else %}Region {{ r.region }}{% endif %}</div>{% endif %}</td>
+      <td class="rem">{%- if r.remarks_de or r.remarks_en -%}<span class="de">{{ r.remarks_de or r.remarks_en }}</span><span class="en">{{ r.remarks_en or r.remarks_de }}</span>{%- endif -%}</td>
     </tr>
     {% endfor %}
     </tbody>
@@ -79,31 +100,40 @@
 <div class="lightbox" id="lb"><img alt=""></div>
 <script>
   const tbody = document.querySelector('tbody'), rows = [...tbody.children], cnt = document.getElementById('count');
-  const q = document.getElementById('q'), arrow = document.getElementById('arrow');
+  const q = document.getElementById('q'), genre = document.getElementById('genre'), dupbtn = document.getElementById('dupbtn');
   const collator = new Intl.Collator('de', { sensitivity: 'base', numeric: true });
-  let dir = 'asc';
+  let key = 'title', dir = 'asc', dupOnly = false;
 
-  function sortRows(d) {
-    dir = d;
-    rows.sort((a, b) => collator.compare(a.dataset.sort, b.dataset.sort) * (d === 'asc' ? 1 : -1));
+  function sortRows(k, d) {
+    key = k; dir = d;
+    const f = k === 'nr' ? r => r.dataset.nr : r => r.dataset.sort;
+    rows.sort((a, b) => collator.compare(f(a), f(b)) * (d === 'asc' ? 1 : -1));
     rows.forEach(r => tbody.appendChild(r));
-    document.querySelectorAll('.seg button[data-sort]').forEach(b => b.setAttribute('aria-pressed', b.dataset.sort === d));
-    arrow.textContent = d === 'asc' ? '▲' : '▼';
+    document.querySelectorAll('.seg button[data-sort]').forEach(b => b.setAttribute('aria-pressed', k === 'title' && b.dataset.sort === d));
+    document.getElementById('arrow').textContent = k === 'title' ? (d === 'asc' ? '▲' : '▼') : '';
+    document.getElementById('nrarrow').textContent = k === 'nr' ? (d === 'asc' ? '▲' : '▼') : '';
   }
   function filterRows() {
-    const t = q.value.toLowerCase().trim(); let n = 0;
-    rows.forEach(r => { const hit = !t || r.dataset.s.includes(t); r.style.display = hit ? '' : 'none'; n += hit; });
+    const t = q.value.toLowerCase().trim(), g = genre ? genre.value : ''; let n = 0;
+    rows.forEach(r => {
+      const hit = (!t || r.dataset.s.includes(t)) && (!g || r.dataset.genres.includes('|' + g + '|')) && (!dupOnly || r.dataset.dup);
+      r.style.display = hit ? '' : 'none'; n += hit;
+    });
     cnt.textContent = n;
   }
   function setLang(l) {
     document.body.dataset.lang = l; document.documentElement.lang = l;
     q.placeholder = l === 'de' ? 'Suchen…' : 'Search…';
+    if (genre) [...genre.options].forEach(o => o.textContent = o.dataset[l]);
     document.querySelectorAll('.seg button[data-l]').forEach(b => b.setAttribute('aria-pressed', b.dataset.l === l));
   }
 
   q.addEventListener('input', filterRows);
-  document.querySelectorAll('.seg button[data-sort]').forEach(b => b.addEventListener('click', () => sortRows(b.dataset.sort)));
-  document.getElementById('sorthead').addEventListener('click', () => sortRows(dir === 'asc' ? 'desc' : 'asc'));
+  if (genre) genre.addEventListener('change', filterRows);
+  if (dupbtn) dupbtn.addEventListener('click', () => { dupOnly = !dupOnly; dupbtn.setAttribute('aria-pressed', dupOnly); filterRows(); });
+  document.querySelectorAll('.seg button[data-sort]').forEach(b => b.addEventListener('click', () => sortRows('title', b.dataset.sort)));
+  document.getElementById('sorthead').addEventListener('click', () => sortRows('title', key === 'title' && dir === 'asc' ? 'desc' : 'asc'));
+  document.getElementById('nrhead').addEventListener('click', () => sortRows('nr', key === 'nr' && dir === 'asc' ? 'desc' : 'asc'));
   document.querySelectorAll('.seg button[data-l]').forEach(b => b.addEventListener('click', () => setLang(b.dataset.l)));
 
   const lb = document.getElementById('lb');
@@ -112,7 +142,7 @@
   });
   lb.addEventListener('click', () => lb.classList.remove('open'));
   addEventListener('keydown', e => e.key === 'Escape' && lb.classList.remove('open'));
-  sortRows('asc');
+  sortRows('title', 'asc');
   setLang('en');
 </script>
 </body>
