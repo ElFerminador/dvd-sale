@@ -43,7 +43,7 @@ CSV_PATH = ROOT / "items.csv"
 CACHE_PATH = ROOT / ".cache.json"
 UA = "media-sale/0.1 (fermin@fermin.ch)"
 IMG_EXT = {".jpg", ".jpeg", ".png", ".heic"}
-FIELDS = ["id", "front", "back", "barcode", "title", "year", "runtime_min", "genre",
+FIELDS = ["id", "front", "back", "barcode", "title", "year", "runtime_min", "genre", "format", "rare",
           "description_de", "description_en", "language", "region", "sort_title", "source", "check",
           "remarks_de", "remarks_en"]
 
@@ -785,6 +785,60 @@ def cmd_describe(args):
     write_rows(rows)
 
 
+def detect_format(row):
+    """Ask Claude which disc format the cover photos show (DVD, Blu-ray, 4K UHD, HD DVD, VHS, CD, ...)."""
+    names = [n for n in (row["front"], row["back"]) if n]
+    ckey = "format:" + ":".join(f"{n}:{(PHOTOS / n).stat().st_size}" for n in names)
+    if ckey in _cache:
+        return _cache[ckey]
+    import anthropic
+    content = []
+    for n in names:
+        img = load_image(PHOTOS / n)
+        img.thumbnail((1100, 1100))
+        buf = io.BytesIO()
+        img.save(buf, "JPEG", quality=82)
+        content.append({"type": "image", "source": {"type": "base64", "media_type": "image/jpeg",
+                        "data": base64.standard_b64encode(buf.getvalue()).decode()}})
+    content.append({"type": "text", "text": (
+        "These are the front and/or back cover photos of a physical media item. Which disc/tape format is it? "
+        "Look for logos and text: 'DVD Video' logo = DVD; 'Blu-ray Disc' logo, blue case, region letters A/B/C = Blu-ray; "
+        "'4K Ultra HD' = 4K UHD; 'HD DVD'; VHS; CD. Reply with ONLY a JSON object: "
+        '{"format": "DVD"|"Blu-ray"|"4K UHD"|"HD DVD"|"VHS"|"CD"|"other"|"unclear", "evidence": "short reason"}')})
+    msg = anthropic.Anthropic(max_retries=6).messages.create(
+        model=os.environ.get("VISION_MODEL", "claude-sonnet-5-5"), max_tokens=3000,
+        messages=[{"role": "user", "content": content}])
+    try:
+        text = next(b.text for b in msg.content if b.type == "text")
+        result = json.loads(text[text.index("{"):text.rindex("}") + 1])
+    except (StopIteration, ValueError):
+        return None
+    cache_put(ckey, result)
+    return result
+
+
+def cmd_formats(args):
+    rows = [r for r in read_rows() if r["front"] or r["back"]]
+    print(f"{len(rows)} Titel auf das Format prüfen…", flush=True)
+    odd, failed = [], []
+    with ThreadPoolExecutor(max_workers=args.workers) as ex:
+        futs = {ex.submit(detect_format, r): r for r in rows}
+        for n, fut in enumerate(as_completed(futs), 1):
+            r = futs[fut]
+            try:
+                res = fut.result()
+            except Exception as e:
+                res = None
+                print(f"{r['id']} Fehler: {e}")
+            if not res:
+                failed.append(r["id"])
+            elif res.get("format") != "DVD":
+                odd.append((r["id"], r["title"], res))
+                print(f"[{n}/{len(rows)}] {r['id']} {r['title'][:40]}: {res.get('format')} – {res.get('evidence')}", flush=True)
+    print(f"\nKein DVD-Format erkannt bei {len(odd)} Titel(n); keine Antwort bei {len(failed)}: {failed}")
+    (ROOT / "formats.json").write_text(json.dumps({i: [t, res] for i, t, res in odd}, ensure_ascii=False, indent=1))
+
+
 def cmd_regions(args):
     """Apply region/language hints from already cached photo analyses to rows that still have the default
     region. Rows you changed by hand (region differs from the default) are left alone."""
@@ -858,6 +912,11 @@ def cmd_site(args):
         for g in r["genres"]:
             counts[g] = counts.get(g, 0) + 1
     genre_opts = [{"en": g, "de": GENRES.get(KIND, {}).get(g, g), "n": n} for g, n in sorted(counts.items())]
+    for r in items:  # 'format' is empty for plain DVDs; anything else is shown as a badge
+        r["odd_format"] = r.get("format", "").strip() if r.get("format", "").strip().lower() not in ("", "dvd") else ""
+    for r in items:  # 'rare': any entry except empty / 0 / nein / no
+        r["is_rare"] = r.get("rare", "").strip().lower() not in ("", "0", "nein", "no", "false")
+    rare_total = sum(1 for r in items if r["is_rare"])
     dups = find_duplicates(items)
     lines = [f"{g[0]['title']} ({g[0]['year']}) – {len(g)}×: IDs {', '.join(x['id'] for x in g)}"
              + ("  [gleicher Barcode]" if len({x['barcode'] for x in g}) == 1 and g[0]['barcode'] else "")
@@ -872,14 +931,14 @@ def cmd_site(args):
     (OUT / "items.json").write_text(json.dumps(items, ensure_ascii=False, indent=1))
     from jinja2 import Environment, FileSystemLoader
     html = Environment(loader=FileSystemLoader(ROOT), autoescape=True).get_template("template.html").render(
-        items=items, cfg=CFG, kind=KIND, dup_total=len(dups),
+        items=items, cfg=CFG, kind=KIND, dup_total=len(dups), rare_total=rare_total,
         genre_opts=genre_opts)
     (OUT / "index.html").write_text(html)
     (OUT / ".nojekyll").write_text("")
     # plain-text list for the Ricardo/Tutti ad (no links, no HTML allowed there)
     lines = []
     for r in items:
-        bits = [r["id"], r["title"], r["year"], f"{r['runtime_min']} min" if r["runtime_min"] else "", r["language_de"],
+        bits = [r["id"], r["title"], r["odd_format"], r["year"], f"{r['runtime_min']} min" if r["runtime_min"] else "", r["language_de"],
                 r.get("remarks_de", "")]
         lines.append(" · ".join(b for b in bits if b))
     (OUT / "liste.txt").write_text("\n".join(lines) + "\n")
@@ -889,7 +948,7 @@ def cmd_site(args):
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for name in ("scan", "site", "all", "regions", "describe"):
+    for name in ("scan", "site", "all", "regions", "describe", "formats"):
         p = sub.add_parser(name)
         p.add_argument("--force", action="store_true", help="redo everything, overwriting manual edits")
         p.add_argument("--redo", nargs="*", help="ids to look up again")
@@ -900,6 +959,8 @@ def main():
         cmd_regions(args)
     if args.cmd == "describe":
         cmd_describe(args)
+    if args.cmd == "formats":
+        cmd_formats(args)
     if args.cmd in ("scan", "all"):
         cmd_scan(args)
     if args.cmd in ("site", "all"):
